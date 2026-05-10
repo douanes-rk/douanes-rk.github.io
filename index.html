@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Les Douanes du Sud</title>
+  <style>
+    body {
+      background: #D5BC84;
+      color: #7A451E;
+      font-family: Georgia, serif;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      padding: .6rem .8rem;
+      background: #00000012;
+    }
+    .site-title {
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+    main {
+      padding: 1rem 2rem;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .mentions {
+      margin-top: 1rem;
+    }
+    footer {
+      margin-top: 2rem;
+      border-top: 1px solid #7A451E55;
+      padding: .5rem 1rem;
+      font-size: .9rem;
+    }
+    #connexion-section {
+      display: none;
+      margin-top: 1rem;
+    }
+    #connexion-section.visible {
+      display: block;
+    }
+    .login-img {
+      max-width: 100%;
+      max-height: 220px;
+      border-radius: 6px;
+      margin-bottom: 1rem;
+    }
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      padding: .5rem;
+      margin-bottom: .8rem;
+      border: 1px solid #7A451E;
+      border-radius: 4px;
+      background: #fff;
+      font-size: 1rem;
+      box-sizing: border-box;
+    }
+    .remember {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      margin-bottom: .8rem;
+    }
+    .btn-connexion {
+      background: #7A451E;
+      color: white;
+      border: none;
+      padding: .5rem 1.5rem;
+      border-radius: 4px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    .btn-connexion:hover {
+      background: #5a3210;
+    }
+    .error-msg {
+      color: #c00;
+      background: #fdd;
+      border: 1px solid #c00;
+      padding: .4rem .8rem;
+      border-radius: 4px;
+      margin-bottom: .8rem;
+      display: none;
+    }
+    header a {
+      color: #7A451E;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    header a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <span class="site-title">Les Douanes du Sud</span>
+    &nbsp;|&nbsp;
+    <a onclick="toggleConnexion()">🚪 Connexion</a>
+  </header>
+
+  <main>
+    <!-- Section connexion (cachée par défaut) -->
+    <div id="connexion-section">
+      <h2>Connexion</h2>
+      <img src="https://nsm09.casimages.com/img/2025/09/21//RVvaVb-DouanesConnexion.jpg"
+           alt="Illustration Douanes" class="login-img">
+      <div id="error-msg" class="error-msg"></div>
+      <input type="text" id="username" placeholder="Pseudo RR">
+      <input type="password" id="password" placeholder="Mot de passe">
+      <div class="remember">
+        <input type="checkbox" id="remember">
+        <label for="remember">Rester connecté(e)</label>
+      </div>
+      <button class="btn-connexion" onclick="seConnecter()">Se connecter</button>
+    </div>
+
+    <!-- Section accueil -->
+    <div id="accueil-section" class="mentions">
+      <p>Chuchotez vos codes au portier pour entrer dans les bureaux ! (cliquez sur Connexion)</p>
+      <hr>
+      <p><strong>Mentions :</strong></p>
+      <p>Bienvenue dans l'outil de génération de rapports des maréchaux et de synthèse de douanes du prévôt.</p>
+      <p>Ce site n'est pas un service officiel de Celsius Online.<br>
+         Il a été créé bénévolement par une joueuse pour faciliter la gestion des douanes pour les prévôts
+         et les maréchaux dans le jeu <em>Royaumes Renaissants</em> (Renaissance Kingdoms).
+      </p>
+      <p>Aucune donnée personnelle n'est collectée, transmise à des tiers ou utilisée à des fins publicitaires.</p>
+    </div>
+  </main>
+
+  <footer>
+    Pour toute information ou problème, contactez IG : Agatha.isabella
+  </footer>
+
+  <script>
+    function toggleConnexion() {
+      const section = document.getElementById('connexion-section');
+      section.classList.toggle('visible');
+    }
+
+    async function seConnecter() {
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const errorMsg = document.getElementById('error-msg');
+
+      if (!username || !password) {
+        errorMsg.textContent = "Veuillez renseigner votre identifiant et mot de passe.";
+        errorMsg.style.display = 'block';
+        return;
+      }
+
+      // TODO: connexion Supabase (à compléter à l'étape suivante)
+      errorMsg.textContent = "Connexion non encore configurée.";
+      errorMsg.style.display = 'block';
+    }
+  </script>
+
+</body>
+</html>

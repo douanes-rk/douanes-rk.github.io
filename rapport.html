@@ -294,8 +294,16 @@
         return;
       }
 
-      const today = new Date();
-      const dateStr = today.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
+      const maintenant = new Date();
+      const heure = maintenant.getHours();
+      const today = heure < 5 ? new Date(maintenant - 86400000) : maintenant;
+      if (heure >= 4 && heure < 6) {
+        errorMsg.textContent = "Dépôt de rapports bloqué pendant la mise à jour du jeu (4h-5h30).";
+        errorMsg.style.display = 'block';
+        return;
+      }
+      const anneeIG = today.getFullYear() - 552;
+      const dateStr = today.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long' }) + ' ' + anneeIG;
       const tourDeGarde = garde.value === 'oui';
 
       let mv = memVisions;

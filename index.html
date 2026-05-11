@@ -140,27 +140,44 @@
     Pour toute information ou problème, contactez IG : Agatha.isabella
   </footer>
 
-  <script>
-    function toggleConnexion() {
-      const section = document.getElementById('connexion-section');
-      section.classList.toggle('visible');
-    }
+  <script>function toggleConnexion() {
+  const section = document.getElementById('connexion-section');
+  section.classList.toggle('visible');
+}
 
-    async function seConnecter() {
-      const username = document.getElementById('username').value.trim();
-      const password = document.getElementById('password').value.trim();
-      const errorMsg = document.getElementById('error-msg');
+async function seConnecter() {
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value.trim();
+  const errorMsg = document.getElementById('error-msg');
 
-      if (!username || !password) {
-        errorMsg.textContent = "Veuillez renseigner votre identifiant et mot de passe.";
-        errorMsg.style.display = 'block';
-        return;
-      }
+  if (!username || !password) {
+    errorMsg.textContent = "Veuillez renseigner votre identifiant et mot de passe.";
+    errorMsg.style.display = 'block';
+    return;
+  }
 
-      // TODO: connexion Supabase (à compléter à l'étape suivante)
-      errorMsg.textContent = "Connexion non encore configurée.";
-      errorMsg.style.display = 'block';
-    }
+  const SUPABASE_URL = 'https://zmntjyrognblxzipjohl.supabase.com';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InptbnRqeXJvZ25ibHh6aXBqb2hsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0MjY1ODAsImV4cCI6MjA5NDAwMjU4MH0.oEw5q44RL7x2P9Wr6eDr-vEoIUpNBrAJAzqWAVvnEJ4';
+
+  const { data, error } = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SUPABASE_KEY
+    },
+    body: JSON.stringify({ email: username, password: password })
+  }).then(r => r.json()).then(d => ({ data: d, error: null })).catch(e => ({ data: null, error: e }));
+
+  if (error || data.error) {
+    errorMsg.textContent = "Identifiants incorrects.";
+    errorMsg.style.display = 'block';
+    return;
+  }
+
+  localStorage.setItem('supabase_token', data.access_token);
+  localStorage.setItem('supabase_user', JSON.stringify(data.user));
+  window.location.href = 'dashboard.html';
+}
   </script>
 
 </body>

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Les Douanes RK — Tableau de bord</title>
+  <style>
+    body {
+      background: #D5BC84;
+      color: #7A451E;
+      font-family: Georgia, serif;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      padding: .6rem .8rem;
+      background: #00000012;
+      flex-wrap: wrap;
+    }
+    .site-title {
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+    header a {
+      color: #7A451E;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    header a:hover {
+      text-decoration: underline;
+    }
+    main {
+      padding: 1rem 2rem;
+      max-width: 900px;
+      margin: 0;
+    }
+    footer {
+      margin-top: 2rem;
+      border-top: 1px solid #7A451E55;
+      padding: .5rem 1rem;
+      font-size: .9rem;
+    }
+    .dashboard-card {
+      background: #fff8ee;
+      border: 1px solid #7A451E55;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    .dashboard-card h2 {
+      margin-top: 0;
+      font-size: 1.3rem;
+    }
+    .dashboard-links {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .dashboard-links li {
+      margin-bottom: .6rem;
+    }
+    .dashboard-links a {
+      color: #7A451E;
+      text-decoration: none;
+      font-size: 1rem;
+    }
+    .dashboard-links a:hover {
+      text-decoration: underline;
+    }
+    .blason {
+      height: 48px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <span class="site-title">Les Douanes RK</span>
+    <span id="blason-container"></span>
+    &nbsp;|&nbsp;
+    <span id="nav-links"></span>
+    &nbsp;|&nbsp;
+    <a href="#" onclick="seDeconnecter(); return false;">🚪 Déconnexion</a>
+  </header>
+
+  <main>
+    <div id="dashboard-container"></div>
+  </main>
+
+  <footer>
+    Pour toute information ou problème, contactez IG : Agatha.isabella
+  </footer>
+
+  <script>
+    // Vérifier que l'utilisateur est connecté
+    const userJson = localStorage.getItem('rk_user');
+    if (!userJson) {
+      window.location.href = 'index.html';
+    }
+
+    const user = JSON.parse(userJson);
+    const container = document.getElementById('dashboard-container');
+    const navLinks = document.getElementById('nav-links');
+
+    // Afficher le blason si A&C
+    if (user.bureau === 'Armagnac & Comminges') {
+      document.getElementById('blason-container').innerHTML =
+        '<img src="https://nsm09.casimages.com/img/2025/09/21//iHraVb-Etendard-AC.png" class="blason" alt="Blason A&C">';
+    }
+
+    // Afficher le tableau de bord selon le rôle
+    if (user.role === 'superadmin') {
+      container.innerHTML = `
+        <div class="dashboard-card">
+          <h2>Tableau de bord — Superadmin</h2>
+          <ul class="dashboard-links">
+            <li><a href="admin-users.html">👥 Gérer les utilisateurs</a></li>
+            <li><a href="admin-guides.html">📖 Gérer les guides</a></li>
+            <li><a href="#" onclick="afficherPrevot()">⚔️ Tableau de bord Prévôt</a></li>
+          </ul>
+        </div>
+      `;
+      navLinks.innerHTML = '<a href="dashboard.html">Tableau de bord</a> | <a href="rapport.html">📜 Rapport</a>';
+    }
+
+    else if (user.role === 'prevot') {
+      afficherPrevot();
+      navLinks.innerHTML = '<a href="dashboard.html">Tableau de bord</a> | <a href="rapport.html">📜 Rapport</a>';
+    }
+
+    else if (user.role === 'marechal') {
+      container.innerHTML = `
+        <div class="dashboard-card">
+          <h2>Bienvenue, ${user.username} !</h2>
+          <p>Vous êtes connecté(e) en tant que maréchal de ${user.bureau}.</p>
+        </div>
+      `;
+      window.location.href = 'rapport.html';
+    }
+
+    function afficherPrevot() {
+      container.innerHTML = `
+        <div class="dashboard-card">
+          <h2>Tableau de bord — Prévôt</h2>
+          <ul class="dashboard-links">
+            <li><a href="marechaux.html">🪖 Gérer les maréchaux</a></li>
+            <li><a href="rapports-jour.html">📜 Consulter les rapports du jour</a></li>
+            <li><a href="rectifier-rapport.html">✏️ Rectifier un rapport</a></li>
+            <li><a href="synthese-douane.html">📊 Gérer la synthèse de douane</a></li>
+            <li><a href="brigands.html">⚔️ Gérer les listes des brigands</a></li>
+            <li><a href="tableau-gardes.html">🛡️ Tableau des gardes</a></li>
+          </ul>
+        </div>
+      `;
+    }
+
+    function seDeconnecter() {
+      localStorage.removeItem('rk_user');
+      window.location.href = 'index.html';
+    }
+  </script>
+
+</body>
+</html>

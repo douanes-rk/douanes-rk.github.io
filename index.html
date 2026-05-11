@@ -101,7 +101,7 @@
 <body>
 
   <header>
-    <span class="site-title">Les Douanes du Sud</span>
+    <span class="site-title">Les Douanes RK</span>
     &nbsp;|&nbsp;
     <a onclick="toggleConnexion()">🚪 Connexion</a>
   </header>
@@ -112,6 +112,7 @@
       <h2>Connexion</h2>
       <img src="https://nsm09.casimages.com/img/2025/09/21//RVvaVb-DouanesConnexion.jpg"
            alt="Illustration Douanes" class="login-img">
+      <p>Chuchotez vos codes au portier pour entrer dans les bureaux !</p>
       <div id="error-msg" class="error-msg"></div>
       <input type="text" id="username" placeholder="Pseudo RR">
       <input type="password" id="password" placeholder="Mot de passe">
@@ -124,7 +125,6 @@
 
     <!-- Section accueil -->
     <div id="accueil-section" class="mentions">
-      <p>Chuchotez vos codes au portier pour entrer dans les bureaux ! (cliquez sur Connexion)</p>
       <hr>
       <p><strong>Mentions :</strong></p>
       <p>Bienvenue dans l'outil de génération de rapports des maréchaux et de synthèse de douanes du prévôt.</p>
@@ -140,44 +140,61 @@
     Pour toute information ou problème, contactez IG : Agatha.isabella
   </footer>
 
-  <script>function toggleConnexion() {
-  const section = document.getElementById('connexion-section');
-  section.classList.toggle('visible');
-}
+  <script>
+    function toggleConnexion() {
+      const section = document.getElementById('connexion-section');
+      section.classList.toggle('visible');
+    }
 
-async function seConnecter() {
-  const username = document.getElementById('username').value.trim();
-  const password = document.getElementById('password').value.trim();
-  const errorMsg = document.getElementById('error-msg');
+    async function seConnecter() {
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const errorMsg = document.getElementById('error-msg');
 
-  if (!username || !password) {
-    errorMsg.textContent = "Veuillez renseigner votre identifiant et mot de passe.";
-    errorMsg.style.display = 'block';
-    return;
-  }
+      if (!username || !password) {
+        errorMsg.textContent = "Veuillez renseigner votre identifiant et mot de passe.";
+        errorMsg.style.display = 'block';
+        return;
+      }
 
-  const SUPABASE_URL = 'https://zmntjyrognblxzipjohl.supabase.com';
-  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InptbnRqeXJvZ25ibHh6aXBqb2hsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0MjY1ODAsImV4cCI6MjA5NDAwMjU4MH0.oEw5q44RL7x2P9Wr6eDr-vEoIUpNBrAJAzqWAVvnEJ4';
+      const SUPABASE_URL = 'Thttps://zmntjyrognblxzipjohl.supabase.coON_URL';
+      const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InptbnRqeXJvZ25ibHh6aXBqb2hsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0MjY1ODAsImV4cCI6MjA5NDAwMjU4MH0.oEw5q44RL7x2P9Wr6eDr-vEoIUpNBrAJAzqWAVvnEJ4';
 
-  const { data, error } = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'apikey': SUPABASE_KEY
-    },
-    body: JSON.stringify({ email: username, password: password })
-  }).then(r => r.json()).then(d => ({ data: d, error: null })).catch(e => ({ data: null, error: e }));
+      const passwordHash = await sha256(password);
 
-  if (error || data.error) {
-    errorMsg.textContent = "Identifiants incorrects.";
-    errorMsg.style.display = 'block';
-    return;
-  }
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/users?username=eq.${encodeURIComponent(username)}&password_hash=eq.${passwordHash}&select=id,username,role,bureau,status`, {
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`
+        }
+      });
 
-  localStorage.setItem('supabase_token', data.access_token);
-  localStorage.setItem('supabase_user', JSON.stringify(data.user));
-  window.location.href = 'dashboard.html';
-}
+      const users = await response.json();
+
+      if (!users || users.length === 0) {
+        errorMsg.textContent = "Identifiants incorrects.";
+        errorMsg.style.display = 'block';
+        return;
+      }
+
+      const user = users[0];
+
+      if (user.status !== 'actif') {
+        errorMsg.textContent = "Votre compte n'est pas encore activé.";
+        errorMsg.style.display = 'block';
+        return;
+      }
+
+      localStorage.setItem('rk_user', JSON.stringify(user));
+      window.location.href = 'dashboard.html';
+    }
+
+    async function sha256(message) {
+      const msgBuffer = new TextEncoder().encode(message);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
   </script>
 
 </body>

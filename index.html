@@ -103,8 +103,7 @@
   <header>
     <span class="site-title">Les Douanes RK</span>
     &nbsp;|&nbsp;
-    <a onclick="toggleConnexion()">🚪 Connexion</a>
-  </header>
+    <a href="#" onclick="toggleConnexion(); return false;">🚪 Connexion</a>  </header>
 
   <main>
     <!-- Section connexion (cachée par défaut) -->
@@ -157,7 +156,7 @@
         return;
       }
 
-      const SUPABASE_URL = 'Thttps://zmntjyrognblxzipjohl.supabase.coON_URL';
+      const SUPABASE_URL = 'https://zmntjyrognblxzipjohl.supabase.com';
       const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InptbnRqeXJvZ25ibHh6aXBqb2hsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0MjY1ODAsImV4cCI6MjA5NDAwMjU4MH0.oEw5q44RL7x2P9Wr6eDr-vEoIUpNBrAJAzqWAVvnEJ4';
 
       const passwordHash = await sha256(password);

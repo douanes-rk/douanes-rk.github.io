@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Les Douanes RK — Voir rapport</title>
+  <style>
+    body {
+      background: #D5BC84;
+      color: #7A451E;
+      font-family: Georgia, serif;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      padding: .6rem .8rem;
+      background: #00000012;
+      flex-wrap: wrap;
+    }
+    .site-title { font-weight: bold; font-size: 1.1rem; }
+    header a { color: #7A451E; text-decoration: none; cursor: pointer; }
+    header a:hover { text-decoration: underline; }
+    main { padding: 1rem 2rem; max-width: 900px; margin: 0; }
+    footer {
+      margin-top: 2rem;
+      border-top: 1px solid #7A451E55;
+      padding: .5rem 1rem;
+      font-size: .9rem;
+    }
+    .info-ligne { margin-bottom: .5rem; }
+    textarea {
+      width: 100%;
+      padding: .5rem;
+      border: 1px solid #7A451E55;
+      border-radius: 4px;
+      background: #fff8ee;
+      font-family: Georgia, serif;
+      font-size: .95rem;
+      box-sizing: border-box;
+      resize: vertical;
+    }
+    .bbcode-block {
+      font-family: monospace;
+      font-size: .9rem;
+      height: 400px;
+    }
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: .35rem;
+      margin-bottom: 1rem;
+    }
+    .field-group label { font-weight: bold; }
+    select {
+      padding: .5rem;
+      border: 1px solid #7A451E55;
+      border-radius: 4px;
+      background: #fff8ee;
+      font-family: Georgia, serif;
+      font-size: .95rem;
+    }
+    .btn {
+      background: #7A451E;
+      color: white;
+      border: none;
+      padding: .5rem 1.5rem;
+      border-radius: 4px;
+      font-size: 1rem;
+      cursor: pointer;
+      margin-top: .5rem;
+      margin-right: .5rem;
+      font-family: Georgia, serif;
+    }
+    .btn:hover { background: #5a3210; }
+    .btn-copy {
+      background: #5a3e2b;
+      color: white;
+      border: none;
+      padding: .5rem 1.5rem;
+      border-radius: 4px;
+      font-size: 1rem;
+      cursor: pointer;
+      margin-top: .5rem;
+      font-family: Georgia, serif;
+    }
+    .btn-copy:hover { background: #7a543a; }
+    .btn-edit {
+      background: #2e7d32;
+      color: white;
+      border: none;
+      padding: .5rem 1.5rem;
+      border-radius: 4px;
+      font-size: 1rem;
+      cursor: pointer;
+      margin-top: .5rem;
+      margin-right: .5rem;
+      font-family: Georgia, serif;
+    }
+    .btn-edit:hover { background: #3e8e41; }
+    .section-edition { display: none; margin-top: 1.5rem; }
+    .section-edition.visible { display: block; }
+    .success-msg {
+      color: #2e7d32;
+      background: #e6f4ea;
+      border: 1px solid #2e7d32;
+      padding: .4rem .8rem;
+      border-radius: 4px;
+      margin-bottom: .8rem;
+      display: none;
+    }
+    .villages-select {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: .5rem;
+    }
+    .villages-select label {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <span class="site-title">Les Douanes RK</span>
+    <span id="blason-container"></span>
+    &nbsp;|&nbsp;
+    <a href="dashboard.html">Tableau de bord</a>
+    &nbsp;|&nbsp;
+    <a href="rapports-jour.html">📜 Rapports du jour</a>
+    &nbsp;|&nbsp;
+    <a href="#" onclick="seDeconnecter(); return false;">🚪 Déconnexion</a>
+  </header>
+
+  <main>
+    <div id="contenu">Chargement...</div>
+  </main>
+
+  <footer>
+    Pour toute information ou problème, contactez IG : Agatha.isabella
+  </footer>
+
+  <script>
+    const SUPABASE_URL = 'https://zmntjyrognblxzipjohl.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InptbnRqeXJvZ25ibHh6aXBqb2hsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0MjY1ODAsImV4cCI6MjA5NDAwMjU4MH0.oEw5q44RL7x2P9Wr6eDr-vEoIUpNBrAJAzqWAVvnEJ4';
+    const REPORT_TITLE_COLOR = '#162E5A';
+
+    const userJson = localStorage.getItem('rk_user');
+    if (!userJson) window.location.href = 'index.html';
+    const user = JSON.parse(userJson);
+
+    if (user.bureau === 'Armagnac & Comminges') {
+      document.getElementById('blason-container').innerHTML =
+        '<img src="https://nsm09.casimages.com/img/2025/09/21//iHraVb-Etendard-AC.png" height="48" alt="Blason A&C">';
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const rapportId = params.get('id');
+    if (!rapportId) window.location.href = 'rapports-jour.html';
+
+    let rapportActuel = null;
+    let villagesDisponibles = [];
+
+    async function chargerRapport() {
+      // Charger le rapport
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/reports?id=eq.${rapportId}&select=*`, {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+      });
+      const rapports = await response.json();
+
+      if (!rapports || rapports.length === 0) {
+        document.getElementById('contenu').innerHTML = '<p>Rapport introuvable.</p>';
+        return;
+      }
+
+      rapportActuel = rapports[0];
+
+      // Charger les villages
+      const respVillages = await fetch(`${SUPABASE_URL}/rest/v1/villages?bureau=eq.${encodeURIComponent(user.bureau)}&order=name`, {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+      });
+      villagesDisponibles = await respVillages.json();
+
+      afficherRapport();
+    }
+
+    function afficherRapport() {
+      const r = rapportActuel;
+      const dateIG = new Date(r.report_date);
+      const anneeIG = dateIG.getFullYear() - 552;
+      const dateStr = `${String(dateIG.getDate()).padStart(2, '0')}/${String(dateIG.getMonth() + 1).padStart(2, '0')}/${anneeIG}`;
+
+      const peutModifier = ['prevot', 'superadmin'].includes(user.role);
+
+      const villagesRadios = villagesDisponibles.map(v =>
+        `<label><input type="radio" name="edit-village" value="${v.name}" ${v.name === r.village ? 'checked' : ''}> ${v.name}</label>`
+      ).join('');
+
+      document.getElementById('contenu').innerHTML = `
+        <h2>Rapport du ${dateStr}</h2>
+        <div class="info-ligne"><strong>Village :</strong> ${r.village}</div>
+        <div class="info-ligne"><strong>Tour de garde :</strong> ${r.tour_de_garde ? 'Oui' : 'Non'}</div>
+        <hr>
+
+        <h3>BBCode généré</h3>
+        <textarea class="bbcode-block" id="bbcode-text" readonly>${r.bbcode}</textarea>
+        <br>
+        <button class="btn-copy" onclick="copierBBCode()">📋 Copier le BBCode</button>
+
+        ${peutModifier ? `
+        <br><br>
+        <button class="btn-edit" onclick="toggleEdition()">✏️ Modifier ce rapport</button>
+
+        <div id="section-edition" class="section-edition">
+          <h3>Modifier le rapport</h3>
+          <div id="success-msg" class="success-msg">✅ Rapport modifié avec succès !</div>
+
+          <div class="field-group">
+            <label>Village :</label>
+            <div class="villages-select">${villagesRadios}</div>
+          </div>
+
+          <div class="field-group">
+            <label>Tour de garde :</label>
+            <div>
+              <label><input type="radio" name="edit-garde" value="oui" ${r.tour_de_garde ? 'checked' : ''}> Oui</label>
+              &nbsp;&nbsp;
+              <label><input type="radio" name="edit-garde" value="non" ${!r.tour_de_garde ? 'checked' : ''}> Non</label>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label>Visions et évènements :</label>
+            <textarea id="edit-visions" rows="5">${r.mem_visions || ''}</textarea>
+          </div>
+
+          <div class="field-group">
+            <label>Liste des villageois :</label>
+            <textarea id="edit-villagers" rows="7">${r.villagers || ''}</textarea>
+          </div>
+
+          <div class="field-group">
+            <label>Armées et groupes :</label>
+            <textarea id="edit-armies" rows="5">${r.armies_groups || ''}</textarea>
+          </div>
+
+          <button class="btn-edit" onclick="sauvegarderModifications()">💾 Sauvegarder et régénérer</button>
+          <button class="btn" onclick="toggleEdition()">Annuler</button>
+        </div>
+        ` : ''}
+
+        <br><br>
+        <button class="btn" onclick="window.location.href='rapports-jour.html'">← Retour aux rapports</button>
+      `;
+    }
+
+    function toggleEdition() {
+      const section = document.getElementById('section-edition');
+      section.classList.toggle('visible');
+    }
+
+    async function sauvegarderModifications() {
+      const villageSelectionne = document.querySelector('input[name="edit-village"]:checked');
+      const gardeSelectionne = document.querySelector('input[name="edit-garde"]:checked');
+      const memVisions = document.getElementById('edit-visions').value.trim();
+      const villagers = document.getElementById('edit-villagers').value.trim();
+      const armiesGroups = document.getElementById('edit-armies').value.trim();
+
+      if (!villageSelectionne) {
+        alert('Veuillez sélectionner un village.');
+        return;
+      }
+
+      const village = villageSelectionne.value;
+      const tourDeGarde = gardeSelectionne ? gardeSelectionne.value === 'oui' : rapportActuel.tour_de_garde;
+
+      const dateIG = new Date(rapportActuel.report_date);
+      const anneeIG = dateIG.getFullYear() - 552;
+      const dateStr = `${String(dateIG.getDate()).padStart(2, '0')} ${dateIG.toLocaleDateString('fr-FR', { month: 'long' })} ${anneeIG}`;
+
+      const bbcode = genererBBCode(village, dateStr, memVisions, villagers, armiesGroups);
+
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/reports?id=eq.${rapportId}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({
+          village: village,
+          tour_de_garde: tourDeGarde,
+          mem_visions: memVisions,
+          villagers: villagers,
+          armies_groups: armiesGroups,
+          bbcode: bbcode
+        })
+      });
+
+      if (response.ok) {
+        rapportActuel.village = village;
+        rapportActuel.tour_de_garde = tourDeGarde;
+        rapportActuel.mem_visions = memVisions;
+        rapportActuel.villagers = villagers;
+        rapportActuel.armies_groups = armiesGroups;
+        rapportActuel.bbcode = bbcode;
+        afficherRapport();
+        document.getElementById('success-msg').style.display = 'block';
+        document.getElementById('section-edition').classList.add('visible');
+      }
+    }
+
+    function genererBBCode(village, dateStr, memVisions, villagers, armiesGroups) {
+      const c = REPORT_TITLE_COLOR;
+      const title = (label, count) => {
+        const suffix = count !== undefined ? ` [color=blue][b]${count}[/b][/color]` : '';
+        return `[color=${c}][size=14][b][u]${label}[/u] :[/b][/size][/color]${suffix}\n`;
+      };
+      const countLines = txt => (txt || '').split('\n').filter(l => l.trim()).length;
+
+      let bb = `[quote][center][b][size=18]${village}[/size]\nRapport de la maréchaussée du ${dateStr}.[/b][/center]\n`;
+      bb += title('MÉMOIRE ET VISIONS');
+      bb += (memVisions || '[b]RAS.[/b]') + '\n\n';
+      bb += title('PERSONNES EN SURVEILLANCE', 0);
+      bb += '[b]RAS.[/b]\n\n';
+      bb += title('FLUX MIGRATOIRES', 0);
+      bb += '[b]RAS.[/b]\n\n';
+      bb += title('PRÉSENCES ÉTRANGÈRES', 0);
+      bb += '[b]RAS.[/b]\n\n';
+      bb += title('PRÉSENCES ARMAGNACAISES & COMMINGEOISES', 0);
+      bb += '[b]RAS.[/b]\n\n';
+      bb += title('ARMÉES ET GROUPES', countLines(armiesGroups));
+      bb += (armiesGroups || '[b]RAS.[/b]') + '\n\n';
+      bb += title('LISTE DES VILLAGEOIS & DÉMÉNAGEMENTS');
+      bb += `[spoiler][quote]Déménagements[/quote]\n${villagers}\n[/spoiler]\n\n`;
+      bb += `[quote][size=9][b]LÉGENDE[/b] :\n[color=red][b]Rouge[/b][/color] : Surveillance accrue.\n[color=darkred][b]DarkRed[/b][/color] : Surveillance légère.\n[color=green][b]Vert[/b][/color] : Sans antécédent judiciaire.\n[color=indigo][b]PNG[/b][/color] : Persona Non Grata.[/size][/quote]`;
+      bb += '\n[/quote]';
+      return bb;
+    }
+
+    function copierBBCode() {
+      const textarea = document.getElementById('bbcode-text');
+      textarea.select();
+      document.execCommand('copy');
+      alert('BBCode copié !');
+    }
+
+    function seDeconnecter() {
+      localStorage.removeItem('rk_user');
+      window.location.href = 'index.html';
+    }
+
+    chargerRapport();
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Les Douanes RK — Rapports du jour</title>
+  <style>
+    body {
+      background: #D5BC84;
+      color: #7A451E;
+      font-family: Georgia, serif;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      padding: .6rem .8rem;
+      background: #00000012;
+      flex-wrap: wrap;
+    }
+    .site-title { font-weight: bold; font-size: 1.1rem; }
+    header a { color: #7A451E; text-decoration: none; cursor: pointer; }
+    header a:hover { text-decoration: underline; }
+    main { padding: 1rem 2rem; max-width: 900px; margin: 0; }
+    footer {
+      margin-top: 2rem;
+      border-top: 1px solid #7A451E55;
+      padding: .5rem 1rem;
+      font-size: .9rem;
+    }
+    h2 { margin-bottom: 1.5rem; }
+    .bloc {
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+    }
+    .bloc-manquants {
+      background: #fff5f5;
+      border: 1px solid #cc6a6a;
+    }
+    .bloc-faits {
+      background: #f0fff0;
+      border: 1px solid #6acc6a;
+    }
+    .bloc h3 { margin-top: 0; }
+    .bloc-manquants h3 { color: crimson; }
+    .bloc-faits h3 { color: darkgreen; }
+    ul { margin-top: .5rem; padding-left: 1.2rem; }
+    ul li { margin-bottom: .3rem; }
+    ul li a { color: #7A451E; }
+    ul li a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <span class="site-title">Les Douanes RK</span>
+    <span id="blason-container"></span>
+    &nbsp;|&nbsp;
+    <a href="dashboard.html">Tableau de bord</a>
+    &nbsp;|&nbsp;
+    <a href="rapport.html">📜 Rapport</a>
+    &nbsp;|&nbsp;
+    <a href="#" onclick="seDeconnecter(); return false;">🚪 Déconnexion</a>
+  </header>
+
+  <main>
+    <h2 id="titre-jour">📜 Rapports du jour</h2>
+    <div id="contenu"></div>
+  </main>
+
+  <footer>
+    Pour toute information ou problème, contactez IG : Agatha.isabella
+  </footer>
+
+  <script>
+    const SUPABASE_URL = 'TON_URL';
+    const SUPABASE_KEY = 'TA_CLE_PUBLIQUE';
+
+    const userJson = localStorage.getItem('rk_user');
+    if (!userJson) window.location.href = 'index.html';
+    const user = JSON.parse(userJson);
+
+    if (!['prevot', 'superadmin'].includes(user.role)) {
+      window.location.href = 'dashboard.html';
+    }
+
+    if (user.bureau === 'Armagnac & Comminges') {
+      document.getElementById('blason-container').innerHTML =
+        '<img src="https://nsm09.casimages.com/img/2025/09/21//iHraVb-Etendard-AC.png" height="48" alt="Blason A&C">';
+    }
+
+    async function chargerRapports() {
+      const today = new Date();
+      const dateStr = today.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      document.getElementById('titre-jour').textContent = `📜 Rapports du jour — ${dateStr}`;
+
+      const todayISO = today.toISOString().split('T')[0];
+
+      // Charger villages
+      const respVillages = await fetch(`${SUPABASE_URL}/rest/v1/villages?bureau=eq.${encodeURIComponent(user.bureau)}&order=name`, {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+      });
+      const villages = await respVillages.json();
+
+      // Charger rapports du jour
+      const respRapports = await fetch(`${SUPABASE_URL}/rest/v1/reports?report_date=eq.${todayISO}&bureau=eq.${encodeURIComponent(user.bureau)}&select=village,id`, {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+      });
+      const rapports = await respRapports.json();
+
+      const villagesFaits = rapports.map(r => r.village);
+      const manquants = villages.filter(v => !villagesFaits.includes(v.name));
+      const faits = rapports;
+
+      let html = '';
+
+      if (manquants.length > 0) {
+        html += `<div class="bloc bloc-manquants">
+          <h3>🔴 Il manque les rapports de :</h3>
+          <ul>${manquants.map(v => `<li>${v.name}</li>`).join('')}</ul>
+        </div>`;
+      } else {
+        html += `<div class="bloc bloc-faits">
+          <p>✅ Tous les villages ont un rapport aujourd'hui.</p>
+        </div>`;
+      }
+
+      if (faits.length > 0) {
+        html += `<div class="bloc bloc-faits">
+          <h3>🟢 Rapports faits :</h3>
+          <ul>${faits.map(r => `<li><a href="voir-rapport.html?id=${r.id}">${r.village}</a></li>`).join('')}</ul>
+        </div>`;
+      }
+
+      document.getElementById('contenu').innerHTML = html;
+    }
+
+    chargerRapports();
+
+    function seDeconnecter() {
+      localStorage.removeItem('rk_user');
+      window.location.href = 'index.html';
+    }
+  </script>
+
+</body>
+</html>
